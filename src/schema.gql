@@ -1,0 +1,84 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+input CreateWorkspaceInput {
+  color: String!
+  icon: String!
+  name: String!
+  slug: String!
+}
+
+type Mutation {
+  createWorkspace(input: CreateWorkspaceInput!): Workspace!
+  removeWorkspace(id: String!): Workspace!
+  updateUser(input: UpdateUserInput!): User!
+  updateWorkspace(input: UpdateWorkspaceInput!): Workspace!
+}
+
+enum MutationType {
+  CREATE
+  DELETE
+  UPDATE
+}
+
+type Query {
+  isWorkspaceSlugAvailable(slug: String!): Boolean!
+  user: User!
+  workspace(id: String!): Workspace!
+  workspaceList(skip: Int = 0, take: Int = 10): WorkspaceList!
+}
+
+type Subscription {
+  subscribeToUser: UserSubscriptionPayload!
+  subscribeToWorkspace(id: String!): WorkspaceSubscriptionPayload!
+}
+
+enum Theme {
+  dark
+  light
+}
+
+input UpdateUserInput {
+  displayName: String
+  theme: Theme
+}
+
+input UpdateWorkspaceInput {
+  color: String
+  icon: String
+  id: ID!
+  name: String
+  slug: String
+}
+
+type User {
+  displayName: String
+  email: String!
+  id: ID!
+  photoURL: String
+  theme: Theme!
+}
+
+type UserSubscriptionPayload {
+  mutation: MutationType!
+  user: User!
+}
+
+type Workspace {
+  color: String!
+  icon: String!
+  id: ID!
+  name: String!
+  slug: String!
+}
+
+type WorkspaceList {
+  hasMore: Boolean!
+  workspaces: [Workspace!]!
+}
+
+type WorkspaceSubscriptionPayload {
+  mutation: MutationType!
+  workspace: Workspace!
+}

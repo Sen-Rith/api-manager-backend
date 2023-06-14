@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  displayName    String?
+  photoURL       String?
+  theme          Theme           @default(light)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  workspaceUsers WorkspaceUser[]
+  projectUser    ProjectUser[]
+}
+
+model Workspace {
+  id             String          @id @default(cuid())
+  name           String
+  slug           String          @unique
+  icon           String          @default("mdi-sitemap-outline")
+  color          String          @default("#6200EE")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  workspaceUsers WorkspaceUser[]
+  projects       Project[]
+}
+
+model WorkspaceUser {
+  id          String        @id @default(cuid())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
+  role        WorkspaceRole @default(USER)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  workspaceId String
+  userId      String
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  description  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+  workspaceId  String
+  projectUsers ProjectUser[]
+}
+
+model ProjectUser {
+  id        String          @id @default(cuid())
+  position  Decimal?
+  project   Project         @relation(fields: [projectId], references: [id])
+  user      User            @relation(fields: [userId], references: [id])
+  role      ProjectUserRole @default(USER)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  projectId String
+  userId    String
+}
+
+model Request {
+  id              String         @id @default(cuid())
+  name            String
+  method          String
+  url             String
+  position        Decimal?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  requestFolder   RequestFolder? @relation(fields: [requestFolderId], references: [id])
+  requestFolderId String?
+}
+
+model RequestFolder {
+  id                    String          @id @default(cuid())
+  name                  String
+  slug                  String          @unique
+  position              Decimal?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  requestFolder         RequestFolder?  @relation("RequestFolderToRequestFolder", fields: [parentRequestFolderId], references: [id])
+  parentRequestFolderId String?
+  requests              Request[]
+  requestFolders        RequestFolder[] @relation("RequestFolderToRequestFolder")
+}
+
+enum WorkspaceRole {
+  USER
+  OWNER
+}
+
+enum ProjectUserRole {
+  USER
+  ADMIN
+  OWNER
+}
+
+enum Theme {
+  light
+  dark
+}
