@@ -26,7 +26,7 @@ type Query {
   isWorkspaceSlugAvailable(slug: String!): Boolean!
   user: User!
   workspace(id: String!): Workspace!
-  workspaceList(skip: Int = 0, take: Int = 10): WorkspaceList!
+  workspaceList(excludeIds: [String!], skip: Int = 0, take: Int = 10): WorkspaceList!
 }
 
 type Subscription {

@@ -39,6 +39,7 @@ export class WorkspacesService {
   async findAll(user: User, args: PaginationArgs): Promise<WorkspaceList> {
     const workspaces = await this.prismaService.workspace.findMany({
       where: {
+        id: { notIn: args.excludeIds },
         workspaceUsers: {
           some: {
             userId: user.id,
@@ -68,7 +69,7 @@ export class WorkspacesService {
   async findOne(user: User, id: string): Promise<Workspace> {
     const workspace = await this.prismaService.workspace.findFirst({
       where: {
-        id,
+        OR: [{ id }, { slug: id }],
         workspaceUsers: {
           some: {
             userId: user.id,
@@ -106,17 +107,27 @@ export class WorkspacesService {
 
     const updatedWorkspace = await this.prismaService.workspace.update({
       where: {
-        id: updateWorkspaceInput.id,
+        id: workspace.id,
       },
       data: updateWorkspaceInput,
     });
 
-    this.pubSub.publish(`WORKSPACE_${updatedWorkspace.id}_UPDATED`, {
-      subscribeToWorkspace: {
-        mutation: MutationType.UPDATE,
-        workspace: updatedWorkspace,
-      } as WorkspaceSubscriptionPayload,
+    const workspaceUsers = await this.prismaService.workspaceUser.findMany({
+      where: {
+        workspaceId: workspace.id,
+      },
+      select: {
+        userId: true,
+      },
     });
+
+    this.pubSub.publish(`WORKSPACE_${updatedWorkspace.id}_UPDATED`, {
+      mutation: MutationType.UPDATE,
+      workspace: updatedWorkspace,
+      filter: {
+        userIds: workspaceUsers.map((workspaceUser) => workspaceUser.userId),
+      },
+    } as WorkspaceSubscriptionPayload & { filter: { userIds: string[] } });
 
     return updatedWorkspace;
   }
@@ -138,33 +149,28 @@ export class WorkspacesService {
       throw new NotFoundException('Workspace not found');
     }
 
+    const workspaceUsers = await this.prismaService.workspaceUser.findMany({
+      where: {
+        workspaceId: workspace.id,
+      },
+      select: {
+        userId: true,
+      },
+    });
+
     const deletedWorkspace = await this.prismaService.workspace.delete({
       where: { id },
     });
 
     this.pubSub.publish(`WORKSPACE_${id}_DELETED`, {
-      subscribeToWorkspace: {
-        mutation: MutationType.DELETE,
-        workspace: deletedWorkspace,
-      } as WorkspaceSubscriptionPayload,
-    });
+      mutation: MutationType.DELETE,
+      workspace: workspace,
+      filter: {
+        userIds: workspaceUsers.map((workspaceUser) => workspaceUser.userId),
+      },
+    } as WorkspaceSubscriptionPayload & { filter: { userIds: string[] } });
 
     return deletedWorkspace;
-  }
-
-  async isUserInWorkspace(user: User, id: string): Promise<boolean> {
-    const workspace = await this.prismaService.workspace.findFirst({
-      where: {
-        id,
-        workspaceUsers: {
-          some: {
-            userId: user.id,
-          },
-        },
-      },
-    });
-
-    return !!workspace;
   }
 
   async isWorkspaceSlugAvailable(slug: string): Promise<boolean> {

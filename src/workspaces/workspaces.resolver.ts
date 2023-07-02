@@ -57,15 +57,15 @@ export class WorkspacesResolver {
   @Subscription(() => WorkspaceSubscriptionPayload, {
     async filter(
       this: WorkspacesResolver,
-      payload: WorkspaceSubscriptionPayload,
+      payload: WorkspaceSubscriptionPayload & { filter: { userIds: string[] } },
       variables,
       context,
     ) {
       if (payload.workspace.id !== variables.id) return false;
-      return await this.workspacesService.isUserInWorkspace(
-        context.req.extra.user,
-        payload.workspace.id,
-      );
+      if (!payload.filter.userIds.includes(context.req.extra.user.id)) {
+        return false;
+      }
+      return true;
     },
     resolve: (value) => ({
       ...value,

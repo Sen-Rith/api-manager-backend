@@ -69,7 +69,7 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(PreauthMiddleware).forRoutes({
       path: '*',
-      method: RequestMethod.POST,
+      method: RequestMethod.ALL,
     });
   }
 }

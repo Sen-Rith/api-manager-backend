@@ -7,4 +7,7 @@ export class PaginationArgs {
 
   @Field(() => Int, { nullable: true })
   take = 10;
+
+  @Field(() => [String], { nullable: true })
+  excludeIds?: string[];
 }
